@@ -588,9 +588,9 @@ def render(
     nproc = 1 if sys.platform == "win32" else nproc
     octpath = Path(f"{scene.sid}.oct")
     scenestring = " ".join(
-        [str(srf) for _, srf in {**scene.surfaces, **scene.sources}.items()]
+        [f'"{str(srf)}"' for _, srf in {**scene.surfaces, **scene.sources}.items()]
     )
-    materialstring = " ".join((str(mat) for _, mat in scene.materials.items()))
+    materialstring = " ".join((f'"{str(mat)}"' for _, mat in scene.materials.items()))
     rad_render_options = []
     if ambbounce is not None:
         rad_render_options.extend(["-ab", str(ambbounce)])
@@ -640,7 +640,9 @@ def render(
         print("rebuilding octree...")
         with open(octpath, "wb") as wtr:
             _cmd = radcmds[0].split(">", 1)[0]
-            sp.run(_cmd.split(), check=True, stdout=wtr)
+            _cmd_parsed = [c for c in _cmd.split('"') if not c.isspace()]
+            _cmd_parsed[0] = 'oconv'
+            sp.run(_cmd_parsed, check=True, stdout=wtr)
         _sidx = 1
     elif radcmds[0].startswith(("rm", "del")):
         sp.run(radcmds[0].split(), check=True)
@@ -1044,3 +1046,4 @@ def xform(
     else:
         cmd.append(inp)
     return sp.run(cmd, check=True, input=stdin, stdout=sp.PIPE).stdout
+    
